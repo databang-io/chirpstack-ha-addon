@@ -1,7 +1,7 @@
 #!/usr/bin/with-contenv bashio
 # ==============================================================================
-# Home Assistant Add-on: ChirpStack 4.0
-# Runs ChirpStack LoRaWAN Network Server
+# Home Assistant Add-on: ChirpStack 4.0 - ORGANIZED CONFIG VERSION
+# Runs ChirpStack LoRaWAN Network Server with Gateway Bridge 4.1.1
 # ==============================================================================
 
 bashio::log.info "Starting ChirpStack 4.0..."

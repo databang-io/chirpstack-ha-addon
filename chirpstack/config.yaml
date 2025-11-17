@@ -15,6 +15,10 @@ hassio_api: true
 hassio_role: manager
 homeassistant_api: true
 host_network: true
+ingress: true
+ingress_port: 8080
+panel_icon: "mdi:router-wireless"
+panel_title: "ChirpStack"
 privileged:
   - SYS_RAWIO
 devices:

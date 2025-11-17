@@ -50,11 +50,11 @@ options:
     level="info"
     json=false
 
-    [postgresql]
-    dsn="postgres://chirpstack:chirpstack@core-postgres:5432/chirpstack?sslmode=disable"
+    [database]
+    dsn="sqlite:///data/chirpstack/chirpstack.db?mode=rwc"
 
     [redis]
-    servers=["redis://core-redis:6379"]
+    disable_all_integrations=true
 
     [network]
     net_id="000000"
@@ -68,8 +68,9 @@ options:
     username="chirpstack"
     password=""
 
-    [regions.eu868]
+    [[regions]]
     name="eu868"
+    common_name="EU868"
   gateway_bridge_config: |
     [general]
     log_level=4

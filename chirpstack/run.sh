@@ -43,8 +43,15 @@ mkdir -p /share/chirpstack
 
 bashio::log.info "Cleaned up conflicting files and created directories"
 
-# Skip old GUI configuration - use SQLite config directly
-bashio::log.info "Using SQLite configuration (skipping GUI config processing)"
+# Process the ChirpStack configuration from the GUI
+bashio::log.info "Creating ChirpStack configuration from GUI settings..."
+echo "${chirpstack_config}" > /tmp/chirpstack_base.toml
+
+# Update MQTT settings from GUI
+sed -i "s|tcp://core-mosquitto:1883|${mqtt_server}|g" /tmp/chirpstack_base.toml
+sed -i "s|username=\"chirpstack\"|username=\"${mqtt_username}\"|g" /tmp/chirpstack_base.toml
+sed -i "s|password=\"\"|password=\"${mqtt_password}\"|g" /tmp/chirpstack_base.toml
+sed -i "s|level=\"info\"|level=\"${log_level}\"|g" /tmp/chirpstack_base.toml
 
 # Process Gateway Bridge configuration if enabled
 if bashio::var.true "${basic_station_enabled}" || bashio::var.true "${packet_forwarder_enabled}"; then
@@ -76,7 +83,19 @@ if bashio::var.true "${basic_station_enabled}" || bashio::var.true "${packet_for
     bashio::log.info "Gateway Bridge configuration file created at /config/chirpstack/chirpstack-gateway-bridge.toml"
 fi
 
-# Skip configuration display - using SQLite config below
+# Copy processed config to proper location
+cp /tmp/chirpstack_base.toml /config/chirpstack/chirpstack.toml
+
+bashio::log.info "ChirpStack configuration file created at /config/chirpstack/chirpstack.toml"
+
+# Display final configuration files for debugging
+bashio::log.info "Final ChirpStack configuration:"
+cat /config/chirpstack/chirpstack.toml
+
+if bashio::var.true "${basic_station_enabled}" || bashio::var.true "${packet_forwarder_enabled}"; then
+    bashio::log.info "Final Gateway Bridge configuration:"
+    cat /config/chirpstack/chirpstack-gateway-bridge.toml
+fi
 
 # Debug directory creation
 bashio::log.info "Checking directories after cleanup..."
@@ -91,36 +110,9 @@ bashio::log.info "Working directory: $(pwd)"
 bashio::log.info "ChirpStack binary version:"
 /usr/local/bin/chirpstack --help | head -3
 
-# Create config directory (ChirpStack expects --config to be a DIR, not a file!)
-mkdir -p /tmp/chirpstack-config
-cat > /tmp/chirpstack-config/chirpstack.toml << 'EOF'
-[logging]
-level="info"
-
-[database]
-dsn="sqlite:///data/chirpstack/chirpstack.db?mode=rwc"
-
-[api]
-bind="0.0.0.0:8080"
-secret="test-secret-key"
-
-# Disable Redis entirely
-[redis]
-disable_all_integrations=true
-
-[[regions]]
-name="eu868"
-common_name="EU868"
-EOF
-
-bashio::log.info "Config directory created with chirpstack.toml:"
-cat /tmp/chirpstack-config/chirpstack.toml
-bashio::log.info "Config directory contents:"
-ls -la /tmp/chirpstack-config/
-
-cd /tmp
-bashio::log.info "Starting ChirpStack with config directory..."
-/usr/local/bin/chirpstack --config /tmp/chirpstack-config &
+# Start ChirpStack using GUI configuration
+bashio::log.info "Starting ChirpStack with GUI configuration..."
+/usr/local/bin/chirpstack --config /config/chirpstack/chirpstack.toml &
 CHIRPSTACK_PID=$!
 
 # Wait a bit and check if it started

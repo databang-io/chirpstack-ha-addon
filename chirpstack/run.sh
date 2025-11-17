@@ -51,23 +51,65 @@ cp /tmp/chirpstack_base.toml /config/chirpstack/chirpstack.toml
 
 bashio::log.info "ChirpStack configuration file created at /config/chirpstack/chirpstack.toml"
 
-# Gateway Bridge temporarily disabled due to build issues
-bashio::log.warning "Gateway Bridge is temporarily disabled due to installation issues"
-bashio::log.info "You can connect gateways directly to ChirpStack via external Gateway Bridge"
+# Process Gateway Bridge configuration if enabled
+if bashio::var.true "${basic_station_enabled}" || bashio::var.true "${packet_forwarder_enabled}"; then
+    bashio::log.info "Creating Gateway Bridge configuration from GUI settings..."
+    
+    echo "${gateway_bridge_config}" > /tmp/gateway_bridge_base.toml
+    
+    # Update MQTT settings from GUI
+    sed -i "s|tcp://core-mosquitto:1883|${mqtt_server}|g" /tmp/gateway_bridge_base.toml
+    sed -i "s|username=\"chirpstack\"|username=\"${mqtt_username}\"|g" /tmp/gateway_bridge_base.toml
+    sed -i "s|password=\"\"|password=\"${mqtt_password}\"|g" /tmp/gateway_bridge_base.toml
+    sed -i "s|bind=\"0.0.0.0:3001\"|bind=\"${basic_station_bind}\"|g" /tmp/gateway_bridge_base.toml
+    sed -i "s|udp_bind=\"0.0.0.0:1700\"|udp_bind=\"${packet_forwarder_bind}\"|g" /tmp/gateway_bridge_base.toml
+    
+    # Set log level based on string values
+    case "${log_level}" in
+        "trace") log_num=5 ;;
+        "debug") log_num=5 ;;
+        "info")  log_num=4 ;;
+        "warn")  log_num=3 ;;
+        "error") log_num=2 ;;
+        "fatal") log_num=1 ;;
+        *) log_num=4 ;;
+    esac
+    sed -i "s|log_level=4|log_level=${log_num}|g" /tmp/gateway_bridge_base.toml
+    
+    cp /tmp/gateway_bridge_base.toml /config/chirpstack/chirpstack-gateway-bridge.toml
+    
+    bashio::log.info "Gateway Bridge configuration file created at /config/chirpstack/chirpstack-gateway-bridge.toml"
+fi
 
 # Display final configuration files for debugging
 bashio::log.info "Final ChirpStack configuration:"
 cat /config/chirpstack/chirpstack.toml
 
-# Start ChirpStack only (Gateway Bridge disabled)
+if bashio::var.true "${basic_station_enabled}" || bashio::var.true "${packet_forwarder_enabled}"; then
+    bashio::log.info "Final Gateway Bridge configuration:"
+    cat /config/chirpstack/chirpstack-gateway-bridge.toml
+fi
+
+# Start ChirpStack
 bashio::log.info "Starting ChirpStack Network Server..."
 /usr/local/bin/chirpstack --config /config/chirpstack/chirpstack.toml &
 CHIRPSTACK_PID=$!
+
+# Start Gateway Bridge if configured
+if bashio::var.true "${basic_station_enabled}" || bashio::var.true "${packet_forwarder_enabled}"; then
+    bashio::log.info "Starting ChirpStack Gateway Bridge..."
+    sleep 5
+    /usr/local/bin/chirpstack-gateway-bridge --config /config/chirpstack/chirpstack-gateway-bridge.toml &
+    GATEWAY_BRIDGE_PID=$!
+fi
 
 # Function to handle shutdown
 cleanup() {
     bashio::log.info "Shutting down ChirpStack..."
     kill $CHIRPSTACK_PID 2>/dev/null
+    if [[ -n $GATEWAY_BRIDGE_PID ]]; then
+        kill $GATEWAY_BRIDGE_PID 2>/dev/null
+    fi
     exit 0
 }
 

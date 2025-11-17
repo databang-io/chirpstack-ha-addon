@@ -15,7 +15,7 @@ RUN apk add --no-cache \
 ARG CHIRPSTACK_VERSION="4.15.0"
 ARG GATEWAY_BRIDGE_VERSION="4.1.1"
 
-# Install both ChirpStack and Gateway Bridge (FRESH CACHE 2024-11-17)
+# Install both ChirpStack and Gateway Bridge (CACHE BUST FIXED GW 4.1.1 - 2024-11-17)
 RUN ARCH=$(uname -m) && \
     case "$ARCH" in \
         x86_64) CHIRP_ARCH="amd64"; GW_ARCH="amd64" ;; \
@@ -34,6 +34,7 @@ RUN ARCH=$(uname -m) && \
     chmod +x /usr/local/bin/chirpstack && \
     rm -rf /tmp/chirpstack.tar.gz && \
     echo "Installing Gateway Bridge for architecture: $GW_ARCH" && \
+    echo "Gateway Bridge URL: https://artifacts.chirpstack.io/downloads/chirpstack-gateway-bridge/chirpstack-gateway-bridge_${GATEWAY_BRIDGE_VERSION}_linux_${GW_ARCH}.tar.gz" && \
     curl -L -o /tmp/chirpstack-gateway-bridge.tar.gz \
         "https://artifacts.chirpstack.io/downloads/chirpstack-gateway-bridge/chirpstack-gateway-bridge_${GATEWAY_BRIDGE_VERSION}_linux_${GW_ARCH}.tar.gz" && \
     tar -xzf /tmp/chirpstack-gateway-bridge.tar.gz -C /tmp/ && \

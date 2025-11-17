@@ -1,0 +1,7 @@
+{
+  "name": "ChirpStack 4.0 Add-on Repository",
+  "description": "Home Assistant Add-on repository for ChirpStack 4.0 LoRaWAN Network Server",
+  "url": "https://github.com/databang-io/chirpstack-addon-repository",
+  "maintainer": "Bernard Rodriguez <bernard.rodriguez@databang.io>",
+  "logo": "https://raw.githubusercontent.com/databang-io/chirpstack-addon-repository/main/chirpstack/logo.png"
+}

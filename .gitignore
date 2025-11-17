@@ -1,0 +1,21 @@
+# Build artifacts
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+test/
+.pytest_cache/
+
+# Development
+dev/
+.env
+.env.local

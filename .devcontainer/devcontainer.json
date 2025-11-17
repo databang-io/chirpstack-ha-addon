@@ -1,0 +1,21 @@
+{
+  "name": "ChirpStack Add-on Development",
+  "context": "..",
+  "dockerFile": "Dockerfile",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      },
+      "extensions": [
+        "ms-vscode.vscode-json"
+      ]
+    }
+  },
+  "appPort": ["7123:8123"],
+  "postCreateCommand": "scripts/setup",
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+  ],
+  "privileged": true
+}

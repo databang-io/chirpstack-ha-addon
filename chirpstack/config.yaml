@@ -1,0 +1,103 @@
+name: "ChirpStack"
+description: "LoRaWAN Network Server for the Internet of Things"
+version: "4.15.0"
+slug: "chirpstack"
+init: false
+arch:
+  - armhf
+  - armv7
+  - aarch64
+  - amd64
+  - i386
+startup: system
+boot: auto
+hassio_api: true
+hassio_role: manager
+homeassistant_api: true
+host_network: true
+privileged:
+  - SYS_RAWIO
+devices:
+  - /dev/ttyUSB0
+  - /dev/ttyACM0
+  - /dev/ttyAMA0
+  - /dev/serial/by-id
+ports:
+  8080/tcp: 8080
+  1700/udp: 1700
+  3001/tcp: 3001
+ports_description:
+  8080/tcp: "ChirpStack Web Interface"
+  1700/udp: "Semtech UDP Packet Forwarder"
+  3001/tcp: "Basic Station WebSocket"
+map:
+  - share:rw
+  - config:rw
+options:
+  log_level: info
+  mqtt:
+    server: "tcp://core-mosquitto:1883"
+    username: "chirpstack"
+    password: ""
+  basic_station:
+    enabled: true
+    bind: "0.0.0.0:3001"
+  packet_forwarder:
+    enabled: true
+    bind: "0.0.0.0:1700"
+  chirpstack_config: |
+    [logging]
+    level="info"
+    json=false
+
+    [postgresql]
+    dsn="postgres://chirpstack:chirpstack@core-postgres:5432/chirpstack?sslmode=disable"
+
+    [redis]
+    servers=["redis://core-redis:6379"]
+
+    [network]
+    net_id="000000"
+
+    [api]
+    bind="0.0.0.0:8080"
+    secret="you-must-replace-this"
+
+    [integration.mqtt]
+    server="tcp://core-mosquitto:1883"
+    username="chirpstack"
+    password=""
+
+    [regions.eu868]
+    name="eu868"
+  gateway_bridge_config: |
+    [general]
+    log_level=4
+
+    [backend.basic_station]
+    bind="0.0.0.0:3001"
+
+    [backend.semtech_udp]
+    udp_bind="0.0.0.0:1700"
+
+    [integration.mqtt.auth]
+    type="generic"
+
+    [integration.mqtt.auth.generic]
+    servers=["tcp://core-mosquitto:1883"]
+    username="chirpstack"
+    password=""
+schema:
+  log_level: list(trace|debug|info|warn|error|fatal)?
+  mqtt:
+    server: str
+    username: str
+    password: password
+  basic_station:
+    enabled: bool?
+    bind: str?
+  packet_forwarder:
+    enabled: bool?
+    bind: str?
+  chirpstack_config: str
+  gateway_bridge_config: str

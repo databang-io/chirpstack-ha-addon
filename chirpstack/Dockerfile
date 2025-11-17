@@ -9,7 +9,8 @@ RUN apk add --no-cache \
     bash \
     curl \
     jq \
-    sed
+    sed \
+    redis
 
 # Download and install ChirpStack 4.15.0 and Gateway Bridge 4.1.1 (FRESH REPO)
 # HARDCODE VERSIONS TO BYPASS ARG CACHE ISSUES

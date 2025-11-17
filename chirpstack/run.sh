@@ -74,6 +74,9 @@ json=false
 [database]
 dsn="${chirpstack_database_dsn}"
 
+[redis]
+servers=["redis://localhost:6379"]
+
 [integration]
 enabled = ["${chirpstack_integrations_enabled}"]
 
@@ -173,6 +176,10 @@ ls -la /config/ | grep chirpstack || bashio::log.info "No chirpstack entries in 
 ls -la /data/ | grep chirpstack || bashio::log.info "No chirpstack entries in /data/"
 
 # Start ChirpStack and Gateway Bridge
+bashio::log.info "Starting Redis server..."
+redis-server --daemonize yes --port 6379 --bind 127.0.0.1
+sleep 2
+
 bashio::log.info "Starting ChirpStack Network Server with Gateway Bridge..."
 bashio::log.info "Working directory: $(pwd)"
 
@@ -212,11 +219,13 @@ fi
 
 # Function to handle shutdown
 cleanup() {
-    bashio::log.info "Shutting down ChirpStack and Gateway Bridge..."
+    bashio::log.info "Shutting down ChirpStack, Gateway Bridge and Redis..."
     kill $CHIRPSTACK_PID 2>/dev/null
     if [[ -n $GATEWAY_BRIDGE_PID ]]; then
         kill $GATEWAY_BRIDGE_PID 2>/dev/null
     fi
+    # Stop Redis
+    redis-cli shutdown 2>/dev/null || true
     exit 0
 }
 

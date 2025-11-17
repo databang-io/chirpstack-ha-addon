@@ -7,30 +7,48 @@
 bashio::log.info "Starting ChirpStack 4.0..."
 
 # Parse configuration
-declare log_level
 declare mqtt_server
 declare mqtt_username  
 declare mqtt_password
+declare chirpstack_log_level
+declare chirpstack_api_bind
+declare chirpstack_api_secret
+declare chirpstack_network_id
+declare chirpstack_database_dsn
+declare chirpstack_regions
+declare chirpstack_advanced_config
+declare gateway_bridge_log_level
 declare basic_station_enabled
 declare basic_station_bind
 declare packet_forwarder_enabled
 declare packet_forwarder_bind
-declare chirpstack_config
-declare gateway_bridge_config
+declare gateway_bridge_advanced_config
 
-log_level=$(bashio::config 'log_level')
+# MQTT Settings (shared)
 mqtt_server=$(bashio::config 'mqtt.server')
 mqtt_username=$(bashio::config 'mqtt.username')
 mqtt_password=$(bashio::config 'mqtt.password')
-basic_station_enabled=$(bashio::config 'basic_station.enabled')
-basic_station_bind=$(bashio::config 'basic_station.bind')
-packet_forwarder_enabled=$(bashio::config 'packet_forwarder.enabled')
-packet_forwarder_bind=$(bashio::config 'packet_forwarder.bind')
-chirpstack_config=$(bashio::config 'chirpstack_config')
-gateway_bridge_config=$(bashio::config 'gateway_bridge_config')
 
-bashio::log.info "Log level: ${log_level}"
+# ChirpStack Settings
+chirpstack_log_level=$(bashio::config 'chirpstack.log_level')
+chirpstack_api_bind=$(bashio::config 'chirpstack.api_bind')
+chirpstack_api_secret=$(bashio::config 'chirpstack.api_secret')
+chirpstack_network_id=$(bashio::config 'chirpstack.network_id')
+chirpstack_database_dsn=$(bashio::config 'chirpstack.database_dsn')
+chirpstack_regions=$(bashio::config 'chirpstack.regions')
+chirpstack_advanced_config=$(bashio::config 'chirpstack.advanced_config')
+
+# Gateway Bridge Settings
+gateway_bridge_log_level=$(bashio::config 'gateway_bridge.log_level')
+basic_station_enabled=$(bashio::config 'gateway_bridge.basic_station.enabled')
+basic_station_bind=$(bashio::config 'gateway_bridge.basic_station.bind')
+packet_forwarder_enabled=$(bashio::config 'gateway_bridge.packet_forwarder.enabled')
+packet_forwarder_bind=$(bashio::config 'gateway_bridge.packet_forwarder.bind')
+gateway_bridge_advanced_config=$(bashio::config 'gateway_bridge.advanced_config')
+
 bashio::log.info "MQTT server: ${mqtt_server}"
+bashio::log.info "ChirpStack log level: ${chirpstack_log_level}"
+bashio::log.info "Gateway Bridge log level: ${gateway_bridge_log_level}"
 bashio::log.info "Basic Station enabled: ${basic_station_enabled}"
 bashio::log.info "Packet Forwarder enabled: ${packet_forwarder_enabled}"
 
@@ -43,31 +61,43 @@ mkdir -p /share/chirpstack
 
 bashio::log.info "Cleaned up conflicting files and created directories"
 
-# Process the ChirpStack configuration from the GUI
-bashio::log.info "Creating ChirpStack configuration from GUI settings..."
-echo "${chirpstack_config}" > /tmp/chirpstack_base.toml
+# Generate ChirpStack configuration from organized settings
+bashio::log.info "Generating ChirpStack configuration from organized settings..."
+cat > /tmp/chirpstack_base.toml << EOF
+[logging]
+level="${chirpstack_log_level}"
+json=false
 
-# Update MQTT settings from GUI
-sed -i "s|tcp://core-mosquitto:1883|${mqtt_server}|g" /tmp/chirpstack_base.toml
-sed -i "s|username=\"chirpstack\"|username=\"${mqtt_username}\"|g" /tmp/chirpstack_base.toml
-sed -i "s|password=\"\"|password=\"${mqtt_password}\"|g" /tmp/chirpstack_base.toml
-sed -i "s|level=\"info\"|level=\"${log_level}\"|g" /tmp/chirpstack_base.toml
+[database]
+dsn="${chirpstack_database_dsn}"
 
-# Process Gateway Bridge configuration if enabled
+[redis]
+disable_all_integrations=true
+
+[network]
+net_id="${chirpstack_network_id}"
+
+[api]
+bind="${chirpstack_api_bind}"
+secret="${chirpstack_api_secret}"
+
+[integration.mqtt]
+server="${mqtt_server}"
+username="${mqtt_username}"
+password="${mqtt_password}"
+
+${chirpstack_regions}
+
+# Advanced configuration from user
+${chirpstack_advanced_config}
+EOF
+
+# Generate Gateway Bridge configuration if enabled
 if bashio::var.true "${basic_station_enabled}" || bashio::var.true "${packet_forwarder_enabled}"; then
-    bashio::log.info "Creating Gateway Bridge configuration from GUI settings..."
+    bashio::log.info "Generating Gateway Bridge configuration from organized settings..."
     
-    echo "${gateway_bridge_config}" > /tmp/gateway_bridge_base.toml
-    
-    # Update MQTT settings from GUI
-    sed -i "s|tcp://core-mosquitto:1883|${mqtt_server}|g" /tmp/gateway_bridge_base.toml
-    sed -i "s|username=\"chirpstack\"|username=\"${mqtt_username}\"|g" /tmp/gateway_bridge_base.toml
-    sed -i "s|password=\"\"|password=\"${mqtt_password}\"|g" /tmp/gateway_bridge_base.toml
-    sed -i "s|bind=\"0.0.0.0:3001\"|bind=\"${basic_station_bind}\"|g" /tmp/gateway_bridge_base.toml
-    sed -i "s|udp_bind=\"0.0.0.0:1700\"|udp_bind=\"${packet_forwarder_bind}\"|g" /tmp/gateway_bridge_base.toml
-    
-    # Set log level based on string values
-    case "${log_level}" in
+    # Convert log level to numeric value for Gateway Bridge
+    case "${gateway_bridge_log_level}" in
         "trace") log_num=5 ;;
         "debug") log_num=5 ;;
         "info")  log_num=4 ;;
@@ -76,7 +106,44 @@ if bashio::var.true "${basic_station_enabled}" || bashio::var.true "${packet_for
         "fatal") log_num=1 ;;
         *) log_num=4 ;;
     esac
-    sed -i "s|log_level=4|log_level=${log_num}|g" /tmp/gateway_bridge_base.toml
+    
+    cat > /tmp/gateway_bridge_base.toml << EOF
+[general]
+log_level=${log_num}
+
+EOF
+
+    # Add Basic Station backend if enabled
+    if bashio::var.true "${basic_station_enabled}"; then
+        cat >> /tmp/gateway_bridge_base.toml << EOF
+[backend.basic_station]
+bind="${basic_station_bind}"
+
+EOF
+    fi
+
+    # Add Packet Forwarder backend if enabled
+    if bashio::var.true "${packet_forwarder_enabled}"; then
+        cat >> /tmp/gateway_bridge_base.toml << EOF
+[backend.semtech_udp]
+udp_bind="${packet_forwarder_bind}"
+
+EOF
+    fi
+
+    # Add MQTT integration
+    cat >> /tmp/gateway_bridge_base.toml << EOF
+[integration.mqtt.auth]
+type="generic"
+
+[integration.mqtt.auth.generic]
+servers=["${mqtt_server}"]
+username="${mqtt_username}"
+password="${mqtt_password}"
+
+# Advanced configuration from user
+${gateway_bridge_advanced_config}
+EOF
     
     cp /tmp/gateway_bridge_base.toml /config/chirpstack/chirpstack-gateway-bridge.toml
     

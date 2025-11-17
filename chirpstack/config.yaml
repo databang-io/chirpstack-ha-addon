@@ -34,71 +34,69 @@ map:
   - share:rw
   - config:rw
 options:
-  log_level: info
+  # =============================================================================
+  # MQTT Settings (shared by ChirpStack and Gateway Bridge)
+  # =============================================================================
   mqtt:
     server: "tcp://core-mosquitto:1883"
     username: "chirpstack"
     password: ""
-  basic_station:
-    enabled: true
-    bind: "0.0.0.0:3001"
-  packet_forwarder:
-    enabled: true
-    bind: "0.0.0.0:1700"
-  chirpstack_config: |
-    [logging]
-    level="info"
-    json=false
-
-    [database]
-    dsn="sqlite:///data/chirpstack/chirpstack.db?mode=rwc"
-
-    [redis]
-    disable_all_integrations=true
-
-    [network]
-    net_id="000000"
-
-    [api]
-    bind="0.0.0.0:8080"
-    secret="you-must-replace-this"
-
-    [integration.mqtt]
-    server="tcp://core-mosquitto:1883"
-    username="chirpstack"
-    password=""
-
-    [[regions]]
-    name="eu868"
-    common_name="EU868"
-  gateway_bridge_config: |
-    [general]
-    log_level=4
-
-    [backend.basic_station]
-    bind="0.0.0.0:3001"
-
-    [backend.semtech_udp]
-    udp_bind="0.0.0.0:1700"
-
-    [integration.mqtt.auth]
-    type="generic"
-
-    [integration.mqtt.auth.generic]
-    servers=["tcp://core-mosquitto:1883"]
-    username="chirpstack"
-    password=""
+  
+  # =============================================================================
+  # ChirpStack Configuration
+  # =============================================================================
+  chirpstack:
+    log_level: info
+    api_bind: "0.0.0.0:8080"
+    api_secret: "you-must-replace-this"
+    network_id: "000000"
+    database_dsn: "sqlite:///data/chirpstack/chirpstack.db?mode=rwc"
+    regions: |
+      [[regions]]
+      name="eu868"
+      common_name="EU868"
+    advanced_config: |
+      # Additional ChirpStack configuration
+      # Any TOML sections you want to add or override
+  
+  # =============================================================================
+  # Gateway Bridge Configuration  
+  # =============================================================================
+  gateway_bridge:
+    log_level: info
+    basic_station:
+      enabled: true
+      bind: "0.0.0.0:3001"
+    packet_forwarder:
+      enabled: true
+      bind: "0.0.0.0:1700"
+    advanced_config: |
+      # Additional Gateway Bridge configuration
+      # Any TOML sections you want to add or override
 schema:
-  log_level: list(trace|debug|info|warn|error|fatal)?
+  # MQTT Settings Schema
   mqtt:
     server: str
     username: str
     password: password
-  basic_station:
-    enabled: bool?
-    bind: str?
-  packet_forwarder:
-    enabled: bool?
-    bind: str?
-  chirpstack_config: str
-  gateway_bridge_config: str
+  
+  # ChirpStack Configuration Schema
+  chirpstack:
+    log_level: list(trace|debug|info|warn|error|fatal)?
+    api_bind: str?
+    api_secret: str?
+    network_id: str?
+    database_dsn: str?
+    regions: str?
+    advanced_config: str?
+  
+  # Gateway Bridge Configuration Schema
+  gateway_bridge:
+    log_level: list(trace|debug|info|warn|error|fatal)?
+    basic_station:
+      enabled: bool?
+      bind: str?
+    packet_forwarder:
+      enabled: bool?
+      bind: str?
+    advanced_config: str?

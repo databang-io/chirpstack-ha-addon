@@ -74,10 +74,6 @@ json=false
 [database]
 dsn="${chirpstack_database_dsn}"
 
-# Redis disabled - using SQLite only
-# [redis]
-# servers = []
-
 [integration]
 enabled = ["${chirpstack_integrations_enabled}"]
 

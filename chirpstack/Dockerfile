@@ -15,8 +15,9 @@ RUN apk add --no-cache \
 ARG CHIRPSTACK_VERSION="4.15.0"
 ARG GATEWAY_BRIDGE_VERSION="4.1.1"
 
-# Install both ChirpStack and Gateway Bridge (CACHE BUST FIXED GW 4.1.1 - 2024-11-17)
-RUN ARCH=$(uname -m) && \
+# FORCE CACHE BREAK - Gateway Bridge 4.1.1 ONLY (NOT 4.0.12)
+RUN echo "CACHE BREAK $(date +%s): Gateway Bridge 4.1.1" && \
+    ARCH=$(uname -m) && \
     case "$ARCH" in \
         x86_64) CHIRP_ARCH="amd64"; GW_ARCH="amd64" ;; \
         aarch64) CHIRP_ARCH="arm64"; GW_ARCH="arm64" ;; \
@@ -25,7 +26,8 @@ RUN ARCH=$(uname -m) && \
         i386|i686) CHIRP_ARCH="amd64"; GW_ARCH="386" ;; \
         *) echo "Unsupported architecture: $ARCH" && exit 1 ;; \
     esac && \
-    echo "FRESH REPO: Building ChirpStack ${CHIRPSTACK_VERSION} and Gateway Bridge ${GATEWAY_BRIDGE_VERSION} at $(date)" && \
+    echo "BUILDING: ChirpStack ${CHIRPSTACK_VERSION} and Gateway Bridge ${GATEWAY_BRIDGE_VERSION} at $(date)" && \
+    echo "VERIFY VERSION: Gateway Bridge should be 4.1.1, ARG shows: ${GATEWAY_BRIDGE_VERSION}" && \
     echo "Installing ChirpStack for architecture: $CHIRP_ARCH" && \
     curl -L -o /tmp/chirpstack.tar.gz \
         "https://artifacts.chirpstack.io/downloads/chirpstack/chirpstack_${CHIRPSTACK_VERSION}_sqlite_linux_${CHIRP_ARCH}.tar.gz" && \

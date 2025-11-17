@@ -28,14 +28,14 @@ RUN ARCH=$(uname -m) && \
     echo "FRESH REPO: Building ChirpStack ${CHIRPSTACK_VERSION} and Gateway Bridge ${GATEWAY_BRIDGE_VERSION} at $(date)" && \
     echo "Installing ChirpStack for architecture: $CHIRP_ARCH" && \
     curl -L -o /tmp/chirpstack.tar.gz \
-        "https://artifacts.chirpstack.io/downloads/chirpstack/chirpstack_${CHIRPSTACK_VERSION}_postgres_linux_${CHIRP_ARCH}.tar.gz" && \
+        "https://artifacts.chirpstack.io/downloads/chirpstack/chirpstack_${CHIRPSTACK_VERSION}_sqlite_linux_${CHIRP_ARCH}.tar.gz" && \
     tar -xzf /tmp/chirpstack.tar.gz -C /tmp/ && \
     mv /tmp/chirpstack /usr/local/bin/chirpstack && \
     chmod +x /usr/local/bin/chirpstack && \
     rm -rf /tmp/chirpstack.tar.gz && \
     echo "Installing Gateway Bridge for architecture: $GW_ARCH" && \
     curl -L -o /tmp/chirpstack-gateway-bridge.tar.gz \
-        "https://artifacts.chirpstack.io/downloads/chirpstack-gateway-bridge/chirpstack-gateway-bridge_${GATEWAY_BRIDGE_VERSION}_linux_${GW_ARCH}.tar.gz" && \
+        "https://artifacts.chirpstack.io/downloads/chirpstack-gateway-bridge/chirpstack-gateway-bridge_3.14.8_linux_${GW_ARCH}.tar.gz" && \
     tar -xzf /tmp/chirpstack-gateway-bridge.tar.gz -C /tmp/ && \
     mv /tmp/chirpstack-gateway-bridge /usr/local/bin/chirpstack-gateway-bridge && \
     chmod +x /usr/local/bin/chirpstack-gateway-bridge && \

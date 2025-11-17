@@ -34,22 +34,17 @@ bashio::log.info "MQTT server: ${mqtt_server}"
 bashio::log.info "Basic Station enabled: ${basic_station_enabled}"
 bashio::log.info "Packet Forwarder enabled: ${packet_forwarder_enabled}"
 
-# Create configuration directory
+# Clean up any conflicting files and create proper directories
+rm -f /config/chirpstack-config 2>/dev/null || true
+rm -rf /config/chirpstack 2>/dev/null || true
 mkdir -p /config/chirpstack
+mkdir -p /data/chirpstack
+mkdir -p /share/chirpstack
 
-# Process the ChirpStack configuration from the GUI
-bashio::log.info "Creating ChirpStack configuration from GUI settings..."
-echo "${chirpstack_config}" > /tmp/chirpstack_base.toml
+bashio::log.info "Cleaned up conflicting files and created directories"
 
-# Update MQTT settings from GUI
-sed -i "s|tcp://core-mosquitto:1883|${mqtt_server}|g" /tmp/chirpstack_base.toml
-sed -i "s|username=\"chirpstack\"|username=\"${mqtt_username}\"|g" /tmp/chirpstack_base.toml
-sed -i "s|password=\"\"|password=\"${mqtt_password}\"|g" /tmp/chirpstack_base.toml
-sed -i "s|level=\"info\"|level=\"${log_level}\"|g" /tmp/chirpstack_base.toml
-
-cp /tmp/chirpstack_base.toml /config/chirpstack/chirpstack.toml
-
-bashio::log.info "ChirpStack configuration file created at /config/chirpstack/chirpstack.toml"
+# Skip old GUI configuration - use SQLite config directly
+bashio::log.info "Using SQLite configuration (skipping GUI config processing)"
 
 # Process Gateway Bridge configuration if enabled
 if bashio::var.true "${basic_station_enabled}" || bashio::var.true "${packet_forwarder_enabled}"; then
@@ -81,31 +76,81 @@ if bashio::var.true "${basic_station_enabled}" || bashio::var.true "${packet_for
     bashio::log.info "Gateway Bridge configuration file created at /config/chirpstack/chirpstack-gateway-bridge.toml"
 fi
 
-# Display final configuration files for debugging
-bashio::log.info "Final ChirpStack configuration:"
-cat /config/chirpstack/chirpstack.toml
+# Skip configuration display - using SQLite config below
 
-if bashio::var.true "${basic_station_enabled}" || bashio::var.true "${packet_forwarder_enabled}"; then
-    bashio::log.info "Final Gateway Bridge configuration:"
-    cat /config/chirpstack/chirpstack-gateway-bridge.toml
-fi
+# Debug directory creation
+bashio::log.info "Checking directories after cleanup..."
+ls -la /config/ | grep chirpstack || bashio::log.info "No chirpstack entries in /config/"
+ls -la /data/ | grep chirpstack || bashio::log.info "No chirpstack entries in /data/"
 
-# Start ChirpStack
-bashio::log.info "Starting ChirpStack Network Server..."
-/usr/local/bin/chirpstack --config /config/chirpstack/chirpstack.toml &
+# Start ChirpStack and Gateway Bridge
+bashio::log.info "Starting ChirpStack Network Server with Gateway Bridge..."
+bashio::log.info "Working directory: $(pwd)"
+
+# Test ChirpStack binary version
+bashio::log.info "ChirpStack binary version:"
+/usr/local/bin/chirpstack --help | head -3
+
+# Create config directory (ChirpStack expects --config to be a DIR, not a file!)
+mkdir -p /tmp/chirpstack-config
+cat > /tmp/chirpstack-config/chirpstack.toml << 'EOF'
+[logging]
+level="info"
+
+[database]
+dsn="sqlite:///data/chirpstack/chirpstack.db?mode=rwc"
+
+[api]
+bind="0.0.0.0:8080"
+secret="test-secret-key"
+
+# Disable Redis integrations to avoid connection errors
+[redis]
+servers=[]
+
+[[regions]]
+name="eu868"
+common_name="EU868"
+EOF
+
+bashio::log.info "Config directory created with chirpstack.toml:"
+cat /tmp/chirpstack-config/chirpstack.toml
+bashio::log.info "Config directory contents:"
+ls -la /tmp/chirpstack-config/
+
+cd /tmp
+bashio::log.info "Starting ChirpStack with config directory..."
+/usr/local/bin/chirpstack --config /tmp/chirpstack-config &
 CHIRPSTACK_PID=$!
 
-# Start Gateway Bridge if configured
-if bashio::var.true "${basic_station_enabled}" || bashio::var.true "${packet_forwarder_enabled}"; then
-    bashio::log.info "Starting ChirpStack Gateway Bridge..."
-    sleep 5
-    /usr/local/bin/chirpstack-gateway-bridge --config /config/chirpstack/chirpstack-gateway-bridge.toml &
-    GATEWAY_BRIDGE_PID=$!
+# Wait a bit and check if it started
+sleep 3
+if kill -0 $CHIRPSTACK_PID 2>/dev/null; then
+    bashio::log.info "ChirpStack process is running (PID: $CHIRPSTACK_PID)"
+    
+    # Start Gateway Bridge now that ChirpStack is working
+    if bashio::var.true "${basic_station_enabled}" || bashio::var.true "${packet_forwarder_enabled}"; then
+        bashio::log.info "Starting ChirpStack Gateway Bridge v3.14.8..."
+        sleep 2
+        /usr/local/bin/chirpstack-gateway-bridge --config /config/chirpstack/chirpstack-gateway-bridge.toml &
+        GATEWAY_BRIDGE_PID=$!
+        
+        sleep 2
+        if kill -0 $GATEWAY_BRIDGE_PID 2>/dev/null; then
+            bashio::log.info "Gateway Bridge is running (PID: $GATEWAY_BRIDGE_PID)"
+        else
+            bashio::log.error "Gateway Bridge failed to start"
+        fi
+    else
+        bashio::log.info "Gateway Bridge disabled in configuration"
+    fi
+else
+    bashio::log.error "ChirpStack process died immediately"
 fi
 
 # Function to handle shutdown
 cleanup() {
-    bashio::log.info "Shutting down ChirpStack..."
+    bashio::log.info "Shutting down ChirpStack and Gateway Bridge..."
     kill $CHIRPSTACK_PID 2>/dev/null
     if [[ -n $GATEWAY_BRIDGE_PID ]]; then
         kill $GATEWAY_BRIDGE_PID 2>/dev/null

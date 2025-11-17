@@ -104,9 +104,9 @@ dsn="sqlite:///data/chirpstack/chirpstack.db?mode=rwc"
 bind="0.0.0.0:8080"
 secret="test-secret-key"
 
-# Disable Redis integrations to avoid connection errors
+# Disable Redis entirely
 [redis]
-servers=[]
+disable_all_integrations=true
 
 [[regions]]
 name="eu868"

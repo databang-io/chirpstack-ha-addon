@@ -1,7 +1,8 @@
 #!/usr/bin/with-contenv bashio
 # ==============================================================================
-# Home Assistant Add-on: ChirpStack 4.0 - ORGANIZED CONFIG VERSION
+# Home Assistant Add-on: ChirpStack 4.0 - ORGANIZED CONFIG VERSION - FIXED v3
 # Runs ChirpStack LoRaWAN Network Server with Gateway Bridge 4.1.1
+# FIXED: Config directory instead of config file
 # ==============================================================================
 
 bashio::log.info "Starting ChirpStack 4.0..."
@@ -183,8 +184,8 @@ bashio::log.info "ChirpStack binary version:"
 /usr/local/bin/chirpstack --help | head -3
 
 # Start ChirpStack using GUI configuration
-bashio::log.info "Starting ChirpStack with GUI configuration..."
-/usr/local/bin/chirpstack --config /config/chirpstack/chirpstack.toml &
+bashio::log.info "Starting ChirpStack with config directory..."
+/usr/local/bin/chirpstack --config /config/chirpstack &
 CHIRPSTACK_PID=$!
 
 # Wait a bit and check if it started

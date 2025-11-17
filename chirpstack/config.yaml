@@ -1,7 +1,7 @@
-name: "ChirpStack"
-description: "LoRaWAN Network Server for the Internet of Things"
-version: "4.15.0"
-slug: "chirpstack"
+name: "ChirpStack Fixed"
+description: "LoRaWAN Network Server for the Internet of Things - Config Directory Fix"
+version: "4.15.0-3"
+slug: "chirpstack-fixed"
 init: false
 arch:
   - armhf

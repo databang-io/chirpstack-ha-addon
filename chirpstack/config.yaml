@@ -51,6 +51,7 @@ options:
     api_secret: "you-must-replace-this"
     network_id: "000000"
     database_dsn: "sqlite:///data/chirpstack/chirpstack.db?mode=rwc"
+    integrations_enabled: "mqtt"
     regions: |
       [[regions]]
       name="eu868"
@@ -87,6 +88,7 @@ schema:
     api_secret: str?
     network_id: str?
     database_dsn: str?
+    integrations_enabled: str?
     regions: str?
     advanced_config: str?
   

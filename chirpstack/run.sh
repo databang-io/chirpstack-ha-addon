@@ -15,6 +15,7 @@ declare chirpstack_api_bind
 declare chirpstack_api_secret
 declare chirpstack_network_id
 declare chirpstack_database_dsn
+declare chirpstack_integrations_enabled
 declare chirpstack_regions
 declare chirpstack_advanced_config
 declare gateway_bridge_log_level
@@ -35,6 +36,7 @@ chirpstack_api_bind=$(bashio::config 'chirpstack.api_bind')
 chirpstack_api_secret=$(bashio::config 'chirpstack.api_secret')
 chirpstack_network_id=$(bashio::config 'chirpstack.network_id')
 chirpstack_database_dsn=$(bashio::config 'chirpstack.database_dsn')
+chirpstack_integrations_enabled=$(bashio::config 'chirpstack.integrations_enabled')
 chirpstack_regions=$(bashio::config 'chirpstack.regions')
 chirpstack_advanced_config=$(bashio::config 'chirpstack.advanced_config')
 
@@ -72,7 +74,10 @@ json=false
 dsn="${chirpstack_database_dsn}"
 
 [redis]
-disable_all_integrations=true
+servers = []
+
+[integration]
+enabled = ["${chirpstack_integrations_enabled}"]
 
 [network]
 net_id="${chirpstack_network_id}"

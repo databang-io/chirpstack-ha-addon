@@ -130,7 +130,7 @@ if kill -0 $CHIRPSTACK_PID 2>/dev/null; then
     
     # Start Gateway Bridge now that ChirpStack is working
     if bashio::var.true "${basic_station_enabled}" || bashio::var.true "${packet_forwarder_enabled}"; then
-        bashio::log.info "Starting ChirpStack Gateway Bridge v3.14.8..."
+        bashio::log.info "Starting ChirpStack Gateway Bridge v4.1.1..."
         sleep 2
         /usr/local/bin/chirpstack-gateway-bridge --config /config/chirpstack/chirpstack-gateway-bridge.toml &
         GATEWAY_BRIDGE_PID=$!

@@ -91,6 +91,7 @@ secret="${chirpstack_api_secret}"
 server="${mqtt_server}"
 username="${mqtt_username}"
 password="${mqtt_password}"
+topic_prefix="gateway"
 
 ${chirpstack_regions}
 

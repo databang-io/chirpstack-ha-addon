@@ -99,7 +99,6 @@ ${chirpstack_regions}
 enabled = "mqtt"
 
 [regions.gateway.backend.mqtt]
-topic_prefix = "gateway"
 server = "${mqtt_server}"
 username = "${mqtt_username}"
 password = "${mqtt_password}"
@@ -151,15 +150,19 @@ EOF
 
     # Add MQTT integration
     cat >> /tmp/gateway_bridge_base.toml << EOF
+[integration]
+marshaler="json"
+
 [integration.mqtt]
 event_topic_template="gateway/{{ .GatewayID }}/event/{{ .EventType }}"
+state_topic_template="gateway/{{ .GatewayID }}/state/{{ .StateType }}"
 command_topic_template="gateway/{{ .GatewayID }}/command/#"
 
 [integration.mqtt.auth]
 type="generic"
 
 [integration.mqtt.auth.generic]
-server="${mqtt_server}"
+servers=["${mqtt_server}"]
 username="${mqtt_username}"
 password="${mqtt_password}"
 

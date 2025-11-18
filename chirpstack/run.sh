@@ -142,6 +142,7 @@ EOF
     cat >> /tmp/gateway_bridge_base.toml << EOF
 [integration.mqtt.auth]
 type="generic"
+topic_prefix="gateway"
 
 [integration.mqtt.auth.generic]
 servers=["${mqtt_server}"]

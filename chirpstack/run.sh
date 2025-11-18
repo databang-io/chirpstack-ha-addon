@@ -140,11 +140,6 @@ EOF
 
     # Add MQTT integration
     cat >> /tmp/gateway_bridge_base.toml << EOF
-[integration.mqtt]
-event_topic_template="gateway/{{ .GatewayID }}/event/{{ .EventType }}"
-state_topic_template="gateway/{{ .GatewayID }}/state/{{ .StateType }}"
-command_topic_template="gateway/{{ .GatewayID }}/command/#"
-
 [integration.mqtt.auth]
 type="generic"
 

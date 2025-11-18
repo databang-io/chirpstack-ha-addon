@@ -91,9 +91,20 @@ secret="${chirpstack_api_secret}"
 server="${mqtt_server}"
 username="${mqtt_username}"
 password="${mqtt_password}"
-topic_prefix="gateway"
+json=true
 
 ${chirpstack_regions}
+
+[regions.gateway.backend]
+enabled = "mqtt"
+
+[regions.gateway.backend.mqtt]
+topic_prefix = "gateway"
+server = "${mqtt_server}"
+username = "${mqtt_username}"
+password = "${mqtt_password}"
+qos = 0
+clean_session = false
 
 # Advanced configuration from user
 ${chirpstack_advanced_config}
@@ -140,11 +151,15 @@ EOF
 
     # Add MQTT integration
     cat >> /tmp/gateway_bridge_base.toml << EOF
+[integration.mqtt]
+event_topic_template="gateway/{{ .GatewayID }}/event/{{ .EventType }}"
+command_topic_template="gateway/{{ .GatewayID }}/command/#"
+
 [integration.mqtt.auth]
 type="generic"
 
 [integration.mqtt.auth.generic]
-servers=["${mqtt_server}"]
+server="${mqtt_server}"
 username="${mqtt_username}"
 password="${mqtt_password}"
 

@@ -176,7 +176,14 @@ if bashio::var.true "$basic_station_enabled" || bashio::var.true "$packet_forwar
       /tmp/chirpstack-gateway-bridge.toml
 
     # -----------------------------------------------------------------------
-    # Backend handling — Option B remove disabled backends
+    # fake_rx_time=true
+    # -----------------------------------------------------------------------
+
+    tomlq -it '.backend.semtech_udp.fake_rx_time=true' /tmp/chirpstack-gateway-bridge.toml
+
+
+    # -----------------------------------------------------------------------
+    # Backend handling — remove disabled backends
     # -----------------------------------------------------------------------
     if bashio::var.true "$basic_station_enabled"; then
 

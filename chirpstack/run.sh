@@ -33,10 +33,9 @@ bashio::log.info "Semtech UDP enabled: $packet_forwarder_enabled"
 # Reset configuration directory
 # ---------------------------------------------------------------------------
 rm -rf /config/chirpstack
-rm -rf /config/chirpstack-gateway-bridge
-
 mkdir -p /config/chirpstack
 mkdir -p /config/chirpstack-gateway-bridge
+
 mkdir -p /tmp/chirpstack_temp_config
 
 # ---------------------------------------------------------------------------
@@ -45,27 +44,27 @@ mkdir -p /tmp/chirpstack_temp_config
 /usr/local/bin/chirpstack --config /tmp/chirpstack_temp_config configfile > /tmp/chirpstack.toml
 
 # Remove known duplicate JSON bug
-tomlq -i 'del(.logging.json)' /tmp/chirpstack.toml
+tomlq -it 'del(.logging.json)' /tmp/chirpstack.toml
 
 # ---------------------------------------------------------------------------
 # Apply ChirpStack settings using tomlq
 # ---------------------------------------------------------------------------
-tomlq -i \
+tomlq -it \
   --arg lvl "$chirpstack_log_level" \
   '.logging.level=$lvl' \
   /tmp/chirpstack.toml
 
-tomlq -i \
+tomlq -it \
   --arg bind "$chirpstack_api_bind" \
   '.api.bind=$bind' \
   /tmp/chirpstack.toml
 
-tomlq -i \
+tomlq -it \
   --arg secret "$chirpstack_api_secret" \
   '.api.secret=$secret' \
   /tmp/chirpstack.toml
 
-tomlq -i \
+tomlq -it \
   --arg nid "$chirpstack_network_id" \
   '.network.net_id=$nid' \
   /tmp/chirpstack.toml
@@ -74,35 +73,35 @@ tomlq -i \
 # DATABASE: SQLite or PostgreSQL
 # ---------------------------------------------------------------------------
 if [[ "$chirpstack_database_dsn" == sqlite* ]]; then
-    tomlq -i \
+    tomlq -it \
       --arg dsn "$chirpstack_database_dsn" \
       '.sqlite.path=$dsn' \
       /tmp/chirpstack.toml
 
-    tomlq -i 'del(.postgresql)' /tmp/chirpstack.toml
+    tomlq -it 'del(.postgresql)' /tmp/chirpstack.toml
 else
-    tomlq -i \
+    tomlq -it \
       --arg dsn "$chirpstack_database_dsn" \
       '.postgresql.dsn=$dsn' \
       /tmp/chirpstack.toml
 
-    tomlq -i 'del(.sqlite)' /tmp/chirpstack.toml
+    tomlq -it 'del(.sqlite)' /tmp/chirpstack.toml
 fi
 
 # ---------------------------------------------------------------------------
 # MQTT
 # ---------------------------------------------------------------------------
-tomlq -i \
+tomlq -it \
   --arg srv "$mqtt_server" \
   '.integration.mqtt.server=$srv' \
   /tmp/chirpstack.toml
 
-tomlq -i \
+tomlq -it \
   --arg un "$mqtt_username" \
   '.integration.mqtt.username=$un' \
   /tmp/chirpstack.toml
 
-tomlq -i \
+tomlq -it \
   --arg pw "$mqtt_password" \
   '.integration.mqtt.password=$pw' \
   /tmp/chirpstack.toml
@@ -110,9 +109,7 @@ tomlq -i \
 # ---------------------------------------------------------------------------
 # Regions (replace array)
 # ---------------------------------------------------------------------------
-tomlq -i \
-  '.network.enabled_regions=["eu868"]' \
-  /tmp/chirpstack.toml
+tomlq -it '.network.enabled_regions=["eu868"]' /tmp/chirpstack.toml
 
 # ---------------------------------------------------------------------------
 # SAVE FINAL CHIRPSTACK CONFIG
@@ -124,8 +121,9 @@ cat /config/chirpstack/chirpstack.toml
 
 
 # ==============================================================================
-#  GATEWAY BRIDGE CONFIGURATION
+#  GATEWAY BRIDGE CONFIGURATION — SEPARATE FOLDER
 # ==============================================================================
+
 if bashio::var.true "$basic_station_enabled" || bashio::var.true "$packet_forwarder_enabled"; then
 
     /usr/local/bin/chirpstack-gateway-bridge configfile > /tmp/chirpstack-gateway-bridge.toml
@@ -141,66 +139,64 @@ if bashio::var.true "$basic_station_enabled" || bashio::var.true "$packet_forwar
         *) log_lvl=4 ;;
     esac
 
-    tomlq -i \
+    tomlq -it \
       --argjson lvl "$log_lvl" \
       '.general.log_level=$lvl' \
       /tmp/chirpstack-gateway-bridge.toml
 
     # -----------------------------------------------------------------------
-    # Backend handling — Option B: REMOVE disabled backends
+    # Backend handling — Option B remove disabled backends
     # -----------------------------------------------------------------------
-
     if bashio::var.true "$basic_station_enabled"; then
-        tomlq -i \
+
+        tomlq -it \
           --arg b "$basic_station_bind" \
           '.backend.basic_station.bind=$b' \
           /tmp/chirpstack-gateway-bridge.toml
 
         if ! bashio::var.true "$packet_forwarder_enabled"; then
-            tomlq -i 'del(.backend.semtech_udp)' /tmp/chirpstack-gateway-bridge.toml
+            tomlq -it 'del(.backend.semtech_udp)' /tmp/chirpstack-gateway-bridge.toml
         fi
 
     elif bashio::var.true "$packet_forwarder_enabled"; then
 
-        tomlq -i \
+        tomlq -it \
           --arg b "$packet_forwarder_bind" \
           '.backend.semtech_udp.udp_bind=$b' \
           /tmp/chirpstack-gateway-bridge.toml
 
-        tomlq -i 'del(.backend.basic_station)' /tmp/chirpstack-gateway-bridge.toml
+        tomlq -it 'del(.backend.basic_station)' /tmp/chirpstack-gateway-bridge.toml
     fi
 
     # -----------------------------------------------------------------------
     # MQTT parameters
     # -----------------------------------------------------------------------
-    tomlq -i \
+    tomlq -it \
       --arg srv "$mqtt_server" \
       '.integration.mqtt.auth.generic.servers=[ $srv ]' \
       /tmp/chirpstack-gateway-bridge.toml
 
-    tomlq -i \
+    tomlq -it \
       --arg un "$mqtt_username" \
       '.integration.mqtt.auth.generic.username=$un' \
       /tmp/chirpstack-gateway-bridge.toml
 
-    tomlq -i \
+    tomlq -it \
       --arg pw "$mqtt_password" \
       '.integration.mqtt.auth.generic.password=$pw' \
       /tmp/chirpstack-gateway-bridge.toml
 
-    # -----------------------------------------------------------------------
-    # SAVE GATEWAY BRIDGE CONFIG IN SEPARATE FOLDER
-    # -----------------------------------------------------------------------
+    # SAVE CONFIG TO SEPARATE FOLDER
     cp /tmp/chirpstack-gateway-bridge.toml /config/chirpstack-gateway-bridge/chirpstack-gateway-bridge.toml
 
     bashio::log.info "Generated Gateway Bridge TOML:"
     cat /config/chirpstack-gateway-bridge/chirpstack-gateway-bridge.toml
 fi
 
-
 # ==============================================================================
 # START SERVICES
 # ==============================================================================
+
 bashio::log.info "Starting Redis..."
 redis-server --daemonize yes --port 6379 --bind 127.0.0.1
 
@@ -218,7 +214,7 @@ if kill -0 $CH_PID; then
     if [[ -f /config/chirpstack-gateway-bridge/chirpstack-gateway-bridge.toml ]]; then
         bashio::log.info "Starting Gateway Bridge..."
         /usr/local/bin/chirpstack-gateway-bridge \
-            --config /config/chirpstack-gateway-bridge &
+            --config /config/chirpstack-gateway-bridge/chirpstack-gateway-bridge.toml &
     fi
 else
     bashio::log.error "ChirpStack failed to start!"

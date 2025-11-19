@@ -100,12 +100,9 @@ sed -i "s/password=\".*\"/password=\"${mqtt_password}\"/" /tmp/chirpstack_base.t
 # Configure enabled regions in the existing template
 sed -i "s/enabled_regions=\[/enabled_regions=[\n  \"eu868\",/" /tmp/chirpstack_base.toml
 
-# Only append user advanced configuration if it doesn't contain [integration] or other conflicting sections
-if [[ -n "${chirpstack_advanced_config}" && "${chirpstack_advanced_config}" != *"[integration]"* ]]; then
-    echo "" >> /tmp/chirpstack_base.toml
-    echo "# Advanced configuration from user" >> /tmp/chirpstack_base.toml
-    echo "${chirpstack_advanced_config}" >> /tmp/chirpstack_base.toml
-fi
+# Skip user advanced configuration to prevent any duplicate sections
+# The official configfile template is complete and sufficient
+bashio::log.info "Skipping user advanced configuration to prevent duplicate TOML sections"
 
 # Generate Gateway Bridge configuration if enabled
 if bashio::var.true "${basic_station_enabled}" || bashio::var.true "${packet_forwarder_enabled}"; then

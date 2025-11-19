@@ -64,54 +64,44 @@ mkdir -p /share/chirpstack
 
 bashio::log.info "Cleaned up conflicting files and created directories"
 
-# Generate ChirpStack configuration from organized settings
-bashio::log.info "Generating ChirpStack configuration from organized settings..."
-cat > /tmp/chirpstack_base.toml << EOF
-[logging]
-level="${chirpstack_log_level}"
-json=false
+# Generate ChirpStack configuration using official template
+bashio::log.info "Generating ChirpStack configuration using official template..."
+/usr/local/bin/chirpstack configfile > /tmp/chirpstack_base.toml
 
-[database]
-dsn="${chirpstack_database_dsn}"
+# Customize the template with our settings
+sed -i "s/level=\"info\"/level=\"${chirpstack_log_level}\"/" /tmp/chirpstack_base.toml
+sed -i "s|dsn=\".*\"|dsn=\"${chirpstack_database_dsn}\"|" /tmp/chirpstack_base.toml
+sed -i "s/bind=\".*:8080\"/bind=\"${chirpstack_api_bind}\"/" /tmp/chirpstack_base.toml
+sed -i "s/secret=\".*\"/secret=\"${chirpstack_api_secret}\"/" /tmp/chirpstack_base.toml
+sed -i "s/net_id=\".*\"/net_id=\"${chirpstack_network_id}\"/" /tmp/chirpstack_base.toml
 
-[redis]
-servers=["redis://localhost:6379"]
-
-[integration]
-enabled = ["${chirpstack_integrations_enabled}"]
-
-[network]
-net_id="${chirpstack_network_id}"
-
-[api]
-bind="${chirpstack_api_bind}"
-secret="${chirpstack_api_secret}"
-
-[integration.mqtt]
-server="${mqtt_server}"
-username="${mqtt_username}"
-password="${mqtt_password}"
-json=true
-
-${chirpstack_regions}
-
-[regions.gateway.backend]
+# Configure MQTT for gateway backend
+sed -i '/\[regions.gateway.backend\]/,/\[.*\]/{
+    /enabled[[:space:]]*=/c\
 enabled = "mqtt"
+}' /tmp/chirpstack_base.toml
 
-[regions.gateway.backend.mqtt]
-server = "${mqtt_server}"
-username = "${mqtt_username}"
-password = "${mqtt_password}"
-qos = 0
-clean_session = false
+# Add MQTT backend configuration after gateway backend section
+sed -i '/\[regions.gateway.backend\]/a\
+\
+[regions.gateway.backend.mqtt]\
+server = "'${mqtt_server}'"\
+username = "'${mqtt_username}'"\
+password = "'${mqtt_password}'"\
+qos = 0\
+clean_session = false' /tmp/chirpstack_base.toml
 
-# Advanced configuration from user
-${chirpstack_advanced_config}
-EOF
+# Append user advanced configuration
+echo "" >> /tmp/chirpstack_base.toml
+echo "# Advanced configuration from user" >> /tmp/chirpstack_base.toml
+echo "${chirpstack_advanced_config}" >> /tmp/chirpstack_base.toml
 
 # Generate Gateway Bridge configuration if enabled
 if bashio::var.true "${basic_station_enabled}" || bashio::var.true "${packet_forwarder_enabled}"; then
-    bashio::log.info "Generating Gateway Bridge configuration from organized settings..."
+    bashio::log.info "Generating Gateway Bridge configuration using official template..."
+    
+    # Generate official template
+    /usr/local/bin/chirpstack-gateway-bridge configfile > /tmp/gateway_bridge_base.toml
     
     # Convert log level to numeric value for Gateway Bridge
     case "${gateway_bridge_log_level}" in
@@ -124,51 +114,34 @@ if bashio::var.true "${basic_station_enabled}" || bashio::var.true "${packet_for
         *) log_num=4 ;;
     esac
     
-    cat > /tmp/gateway_bridge_base.toml << EOF
-[general]
-log_level=${log_num}
-
-EOF
-
-    # Add Basic Station backend if enabled
+    # Customize log level
+    sed -i "s/log_level=[0-9]/log_level=${log_num}/" /tmp/gateway_bridge_base.toml
+    
+    # Configure backends based on enabled options
     if bashio::var.true "${basic_station_enabled}"; then
-        cat >> /tmp/gateway_bridge_base.toml << EOF
-[backend.basic_station]
-bind="${basic_station_bind}"
-
-EOF
+        sed -i "s|bind=\".*:3001\"|bind=\"${basic_station_bind}\"|" /tmp/gateway_bridge_base.toml
+    else
+        # Disable Basic Station if not enabled
+        sed -i '/\[backend.basic_station\]/,/^$/d' /tmp/gateway_bridge_base.toml
     fi
-
-    # Add Packet Forwarder backend if enabled
+    
     if bashio::var.true "${packet_forwarder_enabled}"; then
-        cat >> /tmp/gateway_bridge_base.toml << EOF
-[backend.semtech_udp]
-udp_bind="${packet_forwarder_bind}"
-
-EOF
+        sed -i "s|udp_bind=\".*:1700\"|udp_bind=\"${packet_forwarder_bind}\"|" /tmp/gateway_bridge_base.toml
+    else
+        # Disable Semtech UDP if not enabled
+        sed -i '/\[backend.semtech_udp\]/,/^$/d' /tmp/gateway_bridge_base.toml
     fi
-
-    # Add MQTT integration
-    cat >> /tmp/gateway_bridge_base.toml << EOF
-[integration]
-marshaler="json"
-
-[integration.mqtt]
-event_topic_template="gateway/{{ .GatewayID }}/event/{{ .EventType }}"
-state_topic_template="gateway/{{ .GatewayID }}/state/{{ .StateType }}"
-command_topic_template="gateway/{{ .GatewayID }}/command/#"
-
-[integration.mqtt.auth]
-type="generic"
-
-[integration.mqtt.auth.generic]
-servers=["${mqtt_server}"]
-username="${mqtt_username}"
-password="${mqtt_password}"
-
-# Advanced configuration from user
-${gateway_bridge_advanced_config}
-EOF
+    
+    # Configure MQTT integration
+    sed -i "s/marshaler=\".*\"/marshaler=\"json\"/" /tmp/gateway_bridge_base.toml
+    sed -i "s|servers=\[.*\]|servers=[\"${mqtt_server}\"]|" /tmp/gateway_bridge_base.toml
+    sed -i "s/username=\".*\"/username=\"${mqtt_username}\"/" /tmp/gateway_bridge_base.toml
+    sed -i "s/password=\".*\"/password=\"${mqtt_password}\"/" /tmp/gateway_bridge_base.toml
+    
+    # Append user advanced configuration
+    echo "" >> /tmp/gateway_bridge_base.toml
+    echo "# Advanced configuration from user" >> /tmp/gateway_bridge_base.toml
+    echo "${gateway_bridge_advanced_config}" >> /tmp/gateway_bridge_base.toml
     
     cp /tmp/gateway_bridge_base.toml /config/chirpstack/chirpstack-gateway-bridge.toml
     

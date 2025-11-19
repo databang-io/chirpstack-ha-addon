@@ -64,32 +64,37 @@ mkdir -p /share/chirpstack
 
 bashio::log.info "Cleaned up conflicting files and created directories"
 
-# Generate ChirpStack configuration using official template
-bashio::log.info "Generating ChirpStack configuration using official template..."
+# Generate ChirpStack configuration using official configfile command
+bashio::log.info "Generating ChirpStack configuration using official configfile command..."
 /usr/local/bin/chirpstack configfile > /tmp/chirpstack_base.toml
 
 # Customize the template with our settings
 sed -i "s/level=\"info\"/level=\"${chirpstack_log_level}\"/" /tmp/chirpstack_base.toml
-sed -i "s|dsn=\".*\"|dsn=\"${chirpstack_database_dsn}\"|" /tmp/chirpstack_base.toml
 sed -i "s/bind=\".*:8080\"/bind=\"${chirpstack_api_bind}\"/" /tmp/chirpstack_base.toml
 sed -i "s/secret=\".*\"/secret=\"${chirpstack_api_secret}\"/" /tmp/chirpstack_base.toml
 sed -i "s/net_id=\".*\"/net_id=\"${chirpstack_network_id}\"/" /tmp/chirpstack_base.toml
 
-# Configure MQTT for gateway backend
-sed -i '/\[regions.gateway.backend\]/,/\[.*\]/{
-    /enabled[[:space:]]*=/c\
-enabled = "mqtt"
-}' /tmp/chirpstack_base.toml
+# Configure database based on type
+if [[ "${chirpstack_database_dsn}" == sqlite* ]]; then
+    # Configure SQLite
+    sed -i "s|path=\".*\"|path=\"${chirpstack_database_dsn}\"|" /tmp/chirpstack_base.toml
+    # Comment out PostgreSQL section
+    sed -i '/^\[postgresql\]/,/^$/s/^/#/' /tmp/chirpstack_base.toml
+else
+    # Configure PostgreSQL
+    sed -i "s|dsn=\".*\"|dsn=\"${chirpstack_database_dsn}\"|" /tmp/chirpstack_base.toml
+    # Comment out SQLite section
+    sed -i '/^\[sqlite\]/,/^$/s/^/#/' /tmp/chirpstack_base.toml
+fi
 
-# Add MQTT backend configuration after gateway backend section
-sed -i '/\[regions.gateway.backend\]/a\
-\
-[regions.gateway.backend.mqtt]\
-server = "'${mqtt_server}'"\
-username = "'${mqtt_username}'"\
-password = "'${mqtt_password}'"\
-qos = 0\
-clean_session = false' /tmp/chirpstack_base.toml
+# Configure MQTT integration
+sed -i "s|server=\".*1883/\"|server=\"${mqtt_server}\"|" /tmp/chirpstack_base.toml
+sed -i "s/username=\".*\"/username=\"${mqtt_username}\"/" /tmp/chirpstack_base.toml
+sed -i "s/password=\".*\"/password=\"${mqtt_password}\"/" /tmp/chirpstack_base.toml
+
+# Add region-specific configuration
+echo "" >> /tmp/chirpstack_base.toml
+echo "${chirpstack_regions}" >> /tmp/chirpstack_base.toml
 
 # Append user advanced configuration
 echo "" >> /tmp/chirpstack_base.toml
@@ -100,7 +105,7 @@ echo "${chirpstack_advanced_config}" >> /tmp/chirpstack_base.toml
 if bashio::var.true "${basic_station_enabled}" || bashio::var.true "${packet_forwarder_enabled}"; then
     bashio::log.info "Generating Gateway Bridge configuration using official template..."
     
-    # Generate official template
+    # Generate Gateway Bridge configuration using official configfile command
     /usr/local/bin/chirpstack-gateway-bridge configfile > /tmp/gateway_bridge_base.toml
     
     # Convert log level to numeric value for Gateway Bridge

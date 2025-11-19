@@ -43,11 +43,17 @@ mkdir -p /tmp/chirpstack_temp_config
 # ---------------------------------------------------------------------------
 /usr/local/bin/chirpstack --config /tmp/chirpstack_temp_config configfile > /tmp/chirpstack.toml
 
-# Remove ENTIRE logging block to avoid duplicate "json" key bug
+# REMOVE ENTIRE LOGGING SECTION — fixes duplicate "json" key bug
 tomlq -it 'del(.logging)' /tmp/chirpstack.toml
 
-# Recreate clean logging section
+# RECREATE CLEAN LOGGING BLOCK
 tomlq -it '.logging = { level = "info" }' /tmp/chirpstack.toml
+
+# APPLY USER LOG LEVEL
+tomlq -it \
+  --arg lvl "$chirpstack_log_level" \
+  '.logging.level=$lvl' \
+  /tmp/chirpstack.toml
 
 # ---------------------------------------------------------------------------
 # Apply ChirpStack settings using tomlq

@@ -221,6 +221,8 @@ redis-server --daemonize yes --port 6379 --bind 127.0.0.1
 sleep 2
 
 bashio::log.info "Starting ChirpStack..."
+cat /config/chirpstack/chirpstack.toml | grep -i sqlite -n -A2 -B2
+
 /usr/local/bin/chirpstack --config /config/chirpstack &
 
 CH_PID=$!

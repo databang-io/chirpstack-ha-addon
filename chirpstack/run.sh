@@ -97,14 +97,15 @@ sed -i "s|server=\".*1883/\"|server=\"${mqtt_server}\"|" /tmp/chirpstack_base.to
 sed -i "s/username=\".*\"/username=\"${mqtt_username}\"/" /tmp/chirpstack_base.toml
 sed -i "s/password=\".*\"/password=\"${mqtt_password}\"/" /tmp/chirpstack_base.toml
 
-# Add region-specific configuration
-echo "" >> /tmp/chirpstack_base.toml
-echo "${chirpstack_regions}" >> /tmp/chirpstack_base.toml
+# Configure enabled regions in the existing template
+sed -i "s/enabled_regions=\[/enabled_regions=[\n  \"eu868\",/" /tmp/chirpstack_base.toml
 
-# Append user advanced configuration
-echo "" >> /tmp/chirpstack_base.toml
-echo "# Advanced configuration from user" >> /tmp/chirpstack_base.toml
-echo "${chirpstack_advanced_config}" >> /tmp/chirpstack_base.toml
+# Only append user advanced configuration if it doesn't contain [integration] or other conflicting sections
+if [[ -n "${chirpstack_advanced_config}" && "${chirpstack_advanced_config}" != *"[integration]"* ]]; then
+    echo "" >> /tmp/chirpstack_base.toml
+    echo "# Advanced configuration from user" >> /tmp/chirpstack_base.toml
+    echo "${chirpstack_advanced_config}" >> /tmp/chirpstack_base.toml
+fi
 
 # Generate Gateway Bridge configuration if enabled
 if bashio::var.true "${basic_station_enabled}" || bashio::var.true "${packet_forwarder_enabled}"; then

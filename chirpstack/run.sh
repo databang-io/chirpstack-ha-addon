@@ -104,6 +104,11 @@ sed -i "s/enabled_regions=\[/enabled_regions=[\n  \"eu868\",/" /tmp/chirpstack_b
 # The official configfile template is complete and sufficient
 bashio::log.info "Skipping user advanced configuration to prevent duplicate TOML sections"
 
+# Display generated configuration for debugging
+bashio::log.info "=== Generated ChirpStack Configuration ==="
+cat /tmp/chirpstack_base.toml
+bashio::log.info "=== End of Generated Configuration ==="
+
 # Generate Gateway Bridge configuration if enabled
 if bashio::var.true "${basic_station_enabled}" || bashio::var.true "${packet_forwarder_enabled}"; then
     bashio::log.info "Generating Gateway Bridge configuration using official template..."

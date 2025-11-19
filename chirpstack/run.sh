@@ -43,8 +43,19 @@ mkdir -p /tmp/chirpstack_temp_config
 # ---------------------------------------------------------------------------
 /usr/local/bin/chirpstack --config /tmp/chirpstack_temp_config configfile > /tmp/chirpstack.toml
 
-# Remove duplicate logging.json lines BEFORE tomlq parses the file
-sed -i '/json=false/{x;/./d;x;}' /tmp/chirpstack.toml
+# Fix duplicate "json" keys inside [logging] section
+awk '
+  BEGIN { in_logging=0; json_seen=0 }
+  /^\[logging\]/ { in_logging=1; }
+  /^\[/ && !/^\[logging\]/ { in_logging=0; json_seen=0 }
+  in_logging && $0 ~ /^ *json *=/ {
+      if (json_seen == 1) next;
+      json_seen=1
+  }
+  { print }
+' /tmp/chirpstack.toml > /tmp/chirpstack_fixed.toml
+
+mv /tmp/chirpstack_fixed.toml /tmp/chirpstack.toml
 
 
 # APPLY USER LOG LEVEL

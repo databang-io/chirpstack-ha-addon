@@ -88,19 +88,35 @@ tomlq -it \
   /tmp/chirpstack.toml
 
 # ---------------------------------------------------------------------------
-# DATABASE: SQLite ONLY (ChirpStack 4.x correct schema)
-# PostgreSQL removed entirely
+# DATABASE: SQLite ONLY — ChirpStack 4.x correct schema
+# Remove all other DB sections, rebuild storage.sqlite
 # ---------------------------------------------------------------------------
 
-# Remove all possible conflicting DB sections from the template
-tomlq -it 'del(.storage.postgresql)' /tmp/chirpstack.toml 2>/dev/null || true
-tomlq -it 'del(.postgresql)' /tmp/chirpstack.toml 2>/dev/null || true
-tomlq -it 'del(.sqlite)' /tmp/chirpstack.toml 2>/dev/null || true
+# Remove all DB blocks that may exist
+tomlq -it 'del(.storage)' /tmp/chirpstack.toml   2>/dev/null || true
+tomlq -it 'del(.postgresql)' /tmp/chirpstack.toml   2>/dev/null || true
+tomlq -it 'del(.sqlite)' /tmp/chirpstack.toml   2>/dev/null || true
 
-# Inject correct ChirpStack v4 storage layout
+# Create empty [storage] table
+tomlq -it '.storage = {}' /tmp/chirpstack.toml
+
+# Create empty [storage.sqlite] table
+tomlq -it '.storage.sqlite = {}' /tmp/chirpstack.toml
+
+# Assign SQLite path
 tomlq -it \
   --arg dsn "$chirpstack_database_dsn" \
-  '.storage = { sqlite = { path=$dsn, max_open_connections=4 } }' \
+  '.storage.sqlite.path = $dsn' \
+  /tmp/chirpstack.toml
+
+# Add max_open_connections
+tomlq -it \
+  '.storage.sqlite.max_open_connections = 4' \
+  /tmp/chirpstack.toml
+
+# Add SQLite PRAGMAs
+tomlq -it \
+  '.storage.sqlite.pragmas = ["busy_timeout = 1000", "foreign_keys = ON"]' \
   /tmp/chirpstack.toml
 
 # ---------------------------------------------------------------------------

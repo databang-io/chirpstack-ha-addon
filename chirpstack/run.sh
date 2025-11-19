@@ -66,7 +66,9 @@ bashio::log.info "Cleaned up conflicting files and created directories"
 
 # Generate ChirpStack configuration using official configfile command
 bashio::log.info "Generating ChirpStack configuration using official configfile command..."
-/usr/local/bin/chirpstack configfile > /tmp/chirpstack_base.toml
+# ChirpStack configfile requires --config <DIR> argument
+mkdir -p /tmp/chirpstack_temp_config
+/usr/local/bin/chirpstack --config /tmp/chirpstack_temp_config configfile > /tmp/chirpstack_base.toml
 
 # Customize the template with our settings
 sed -i "s/level=\"info\"/level=\"${chirpstack_log_level}\"/" /tmp/chirpstack_base.toml

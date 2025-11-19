@@ -88,23 +88,20 @@ tomlq -it \
   /tmp/chirpstack.toml
 
 # ---------------------------------------------------------------------------
-# DATABASE: SQLite or PostgreSQL
+# DATABASE: SQLite ONLY (ChirpStack 4.x correct schema)
+# PostgreSQL removed entirely
 # ---------------------------------------------------------------------------
-if [[ "$chirpstack_database_dsn" == sqlite* ]]; then
-    tomlq -it \
-      --arg dsn "$chirpstack_database_dsn" \
-      '.sqlite.path=$dsn' \
-      /tmp/chirpstack.toml
 
-    tomlq -it 'del(.postgresql)' /tmp/chirpstack.toml
-else
-    tomlq -it \
-      --arg dsn "$chirpstack_database_dsn" \
-      '.postgresql.dsn=$dsn' \
-      /tmp/chirpstack.toml
+# Remove all possible conflicting DB sections from the template
+tomlq -it 'del(.storage.postgresql)' /tmp/chirpstack.toml 2>/dev/null || true
+tomlq -it 'del(.postgresql)' /tmp/chirpstack.toml 2>/dev/null || true
+tomlq -it 'del(.sqlite)' /tmp/chirpstack.toml 2>/dev/null || true
 
-    tomlq -it 'del(.sqlite)' /tmp/chirpstack.toml
-fi
+# Inject correct ChirpStack v4 storage layout
+tomlq -it \
+  --arg dsn "$chirpstack_database_dsn" \
+  '.storage = { sqlite = { path=$dsn, max_open_connections=4 } }' \
+  /tmp/chirpstack.toml
 
 # ---------------------------------------------------------------------------
 # MQTT

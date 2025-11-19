@@ -54,7 +54,7 @@ options:
     api_bind: "0.0.0.0:8080"
     api_secret: "you-must-replace-this"
     network_id: "000000"
-    database_dsn: "sqlite:///data/chirpstack/chirpstack.db?mode=rwc"
+    database_dsn: "sqlite:///config/chirpstack/chirpstack.db?mode=rwc"
     integrations_enabled: "mqtt"
     regions: |
       [[regions]]

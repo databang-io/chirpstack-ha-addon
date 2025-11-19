@@ -15,7 +15,7 @@ This repository provides a Home Assistant add-on for running ChirpStack 4.0, an 
 3. Select **Repositories**
 4. Add this repository URL:
    ```
-   https://github.com/databang-io/chirpstack-addon-repository
+   https://github.com/databang-io/chirpstack-ha-addon
    ```
 5. Click **Add**
 

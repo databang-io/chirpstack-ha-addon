@@ -9,4 +9,4 @@ codenotary:
   base_image: bernard.rodriguez@databang.io
 args:
   CHIRPSTACK_VERSION: "4.15.0"
-  GATEWAY_BRIDGE_VERSION: "4.0.12"
+  GATEWAY_BRIDGE_VERSION: "4.1.1"

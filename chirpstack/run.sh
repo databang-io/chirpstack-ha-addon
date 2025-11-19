@@ -70,6 +70,9 @@ bashio::log.info "Generating ChirpStack configuration using official configfile 
 mkdir -p /tmp/chirpstack_temp_config
 /usr/local/bin/chirpstack --config /tmp/chirpstack_temp_config configfile > /tmp/chirpstack_base.toml
 
+# Fix duplicate json key in logging section (known issue in configfile template)
+sed -i '/# Flatten JSON logs/,+1d' /tmp/chirpstack_base.toml
+
 # Customize the template with our settings
 sed -i "s/level=\"info\"/level=\"${chirpstack_log_level}\"/" /tmp/chirpstack_base.toml
 sed -i "s/bind=\".*:8080\"/bind=\"${chirpstack_api_bind}\"/" /tmp/chirpstack_base.toml

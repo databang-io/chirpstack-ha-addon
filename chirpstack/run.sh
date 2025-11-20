@@ -137,6 +137,9 @@ tomlq -it \
   '.integration.mqtt.password=$pw' \
   /tmp/chirpstack.toml
 
+# Enable MQTT integration
+tomlq -it '.integration.enabled=["mqtt"]' /tmp/chirpstack.toml
+
 # ---------------------------------------------------------------------------
 # Regions (replace array)
 # ---------------------------------------------------------------------------

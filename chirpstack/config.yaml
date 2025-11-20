@@ -1,6 +1,6 @@
 name: "ChirpStack 4.0"
 description: "LoRaWAN Network Server for the Internet of Things - Config Directory Fix"
-version: "4.15.0-dev-18"
+version: "4.15.0-dev-20"
 slug: "chirpstack"
 init: false
 arch:

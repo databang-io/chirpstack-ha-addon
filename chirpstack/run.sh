@@ -140,8 +140,6 @@ tomlq -it \
 # Enable MQTT integration
 tomlq -it '.integration.enabled=["mqtt"]' /tmp/chirpstack.toml
 
-# Set ChirpStack MQTT client ID (use format that won't be parsed as gateway ID)
-tomlq -it '.integration.mqtt.client_id="nsserver"' /tmp/chirpstack.toml
 
 # ---------------------------------------------------------------------------
 # Gateway Backend Configuration - Enable MQTT for gateway communication
@@ -253,8 +251,6 @@ if bashio::var.true "$basic_station_enabled" || bashio::var.true "$packet_forwar
       '.integration.mqtt.auth.generic.password=$pw' \
       /tmp/chirpstack-gateway-bridge.toml
 
-    # Set Gateway Bridge MQTT client ID (use format that won't be parsed as gateway ID)
-    tomlq -it '.integration.mqtt.auth.generic.client_id="gwbridge"' /tmp/chirpstack-gateway-bridge.toml
 
     # SAVE CONFIG TO SEPARATE FOLDER
     cp /tmp/chirpstack-gateway-bridge.toml /config/chirpstack-gateway-bridge/chirpstack-gateway-bridge.toml

@@ -148,8 +148,14 @@ tomlq -it '.integration.mqtt.client_id="chirpstack-ns"' /tmp/chirpstack.toml
 # ---------------------------------------------------------------------------
 tomlq -it '.gateway.backend.mqtt.event_topic="gateway/+/event/+"' /tmp/chirpstack.toml
 tomlq -it '.gateway.backend.mqtt.command_topic="gateway/{gateway_id}/command/{command}"' /tmp/chirpstack.toml
-tomlq -it '.gateway.backend.mqtt.server="tcp://core-mosquitto:1883"' /tmp/chirpstack.toml
-tomlq -it '.gateway.backend.mqtt.username="chirpstack"' /tmp/chirpstack.toml
+tomlq -it \
+  --arg srv "$mqtt_server" \
+  '.gateway.backend.mqtt.server=$srv' \
+  /tmp/chirpstack.toml
+tomlq -it \
+  --arg un "$mqtt_username" \
+  '.gateway.backend.mqtt.username=$un' \
+  /tmp/chirpstack.toml
 tomlq -it \
   --arg pw "$mqtt_password" \
   '.gateway.backend.mqtt.password=$pw' \

@@ -1,6 +1,6 @@
 name: "ChirpStack 4.0"
 description: "ChirpStack 4.15.0 LoRaWAN Network Server with SQLite and Gateway Bridge"
-version: "4.15.1"
+version: "4.15.0"
 slug: "chirpstack"
 init: false
 arch:

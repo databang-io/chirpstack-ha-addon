@@ -140,6 +140,9 @@ tomlq -it \
 # Enable MQTT integration
 tomlq -it '.integration.enabled=["mqtt"]' /tmp/chirpstack.toml
 
+# Enable eu868 region
+tomlq -it '.network.enabled_regions=["eu868"]' /tmp/chirpstack.toml
+
 
 
 # ---------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 name: "ChirpStack 4.0"
 description: "ChirpStack 4.15.0 LoRaWAN Network Server with SQLite and Gateway Bridge"
-version: "4.15.0"
+version: "4.15.1"
 slug: "chirpstack"
 init: false
 arch:
@@ -15,10 +15,6 @@ hassio_api: true
 hassio_role: manager
 homeassistant_api: true
 host_network: true
-ingress: true
-ingress_port: 8080
-panel_icon: "mdi:router-wireless"
-panel_title: "ChirpStack"
 privileged:
   - SYS_RAWIO
 devices:

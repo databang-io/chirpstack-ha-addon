@@ -182,6 +182,11 @@ if bashio::var.true "$basic_station_enabled" || bashio::var.true "$packet_forwar
       /tmp/chirpstack-gateway-bridge.toml
 
     # -----------------------------------------------------------------------
+    # Set marshaler to JSON to match ChirpStack expectation
+    # -----------------------------------------------------------------------
+    tomlq -it '.integration.marshaler="json"' /tmp/chirpstack-gateway-bridge.toml
+
+    # -----------------------------------------------------------------------
     # fake_rx_time=true
     # -----------------------------------------------------------------------
 

@@ -146,8 +146,8 @@ tomlq -it '.integration.enabled=["mqtt"]' /tmp/chirpstack.toml
 # Regions - configured in separate eu868.toml file
 # ---------------------------------------------------------------------------
 
-# Create EU868 region configuration file
-cat > /config/chirpstack/eu868.toml << 'EOF'
+# Create EU868 region configuration file  
+cat > /config/chirpstack/region_eu868.toml << 'EOF'
 # This file contains EU868 configuration.
 [[regions]]
 
@@ -178,10 +178,10 @@ cat > /config/chirpstack/eu868.toml << 'EOF'
       [regions.gateway.backend.mqtt]
 
         # Event topic template.
-        event_topic="gateway/+/event/+"
+        event_topic="eu868/gateway/+/event/+"
 
         # Command topic template.
-        command_topic="gateway/{{ gateway_id }}/command/{{ command }}"
+        command_topic="eu868/gateway/{{ gateway_id }}/command/{{ command }}"
 
         # MQTT server (e.g. scheme://host:port where scheme is tcp, ssl or ws)
         server="tcp://localhost:1883"
@@ -425,17 +425,17 @@ EOF
 tomlq -it \
   --arg srv "$mqtt_server" \
   '.regions[0].gateway.backend.mqtt.server=$srv' \
-  /config/chirpstack/eu868.toml
+  /config/chirpstack/region_eu868.toml
 
 tomlq -it \
   --arg un "$mqtt_username" \
   '.regions[0].gateway.backend.mqtt.username=$un' \
-  /config/chirpstack/eu868.toml
+  /config/chirpstack/region_eu868.toml
 
 tomlq -it \
   --arg pw "$mqtt_password" \
   '.regions[0].gateway.backend.mqtt.password=$pw' \
-  /config/chirpstack/eu868.toml
+  /config/chirpstack/region_eu868.toml
 
 # ---------------------------------------------------------------------------
 # SAVE FINAL CHIRPSTACK CONFIG
@@ -445,8 +445,8 @@ cp /tmp/chirpstack.toml /config/chirpstack/chirpstack.toml
 bashio::log.info "Generated chirpstack.toml:"
 cat /config/chirpstack/chirpstack.toml
 
-bashio::log.info "Generated eu868.toml:"
-cat /config/chirpstack/eu868.toml
+bashio::log.info "Generated region_eu868.toml:"
+cat /config/chirpstack/region_eu868.toml
 
 
 # ==============================================================================
@@ -456,6 +456,11 @@ cat /config/chirpstack/eu868.toml
 if bashio::var.true "$basic_station_enabled" || bashio::var.true "$packet_forwarder_enabled"; then
 
     /usr/local/bin/chirpstack-gateway-bridge configfile > /tmp/chirpstack-gateway-bridge.toml
+
+    # Update topic templates to include eu868 prefix to match ChirpStack expectations
+    tomlq -it '.integration.mqtt.event_topic_template="eu868/gateway/{{ .GatewayID }}/event/{{ .EventType }}"' /tmp/chirpstack-gateway-bridge.toml
+    tomlq -it '.integration.mqtt.state_topic_template="eu868/gateway/{{ .GatewayID }}/state/{{ .StateType }}"' /tmp/chirpstack-gateway-bridge.toml
+    tomlq -it '.integration.mqtt.command_topic_template="eu868/gateway/{{ .GatewayID }}/command/#"' /tmp/chirpstack-gateway-bridge.toml
 
     # LOG LEVEL convert to number
     case "$gateway_bridge_log_level" in
